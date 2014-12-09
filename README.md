@@ -24,11 +24,13 @@ for record in filtered_aia_lev1:
 record = filtered_aia_lev1[0]
 redord.download("/tmp")
 
-# Get the data as a [StringIO](https://docs.python.org/2/library/stringio.html) without saving to disk
+# Get the data as a StringIO [1] without saving to disk
 data = record.data()
 
-# Open the data as a fits file (see [pyfits open](https://pythonhosted.org/pyfits/api_docs/api_files.html#pyfits.open))
+# Open the data as a fits file (see pyfits open [2])
 hdus = record.HDUs()
 
 
 ```
+[1] [StringIO](https://docs.python.org/2/library/stringio.html)
+[2] [pyfits open](https://pythonhosted.org/pyfits/api_docs/api_files.html#pyfits.open)
