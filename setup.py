@@ -8,6 +8,7 @@ setup(
 	author_email = 'bmampaey@gmail.com',
 	url = 'https://github.com/bmampaey/SOLARNET-python-client',
 	download_url = 'https://github.com/bmampaey/SOLARNET-python-client/tarball/0.1',
-	keywords = ['sun', 'physics', 'SOLARNET', 'RESTfull'],
-	classifiers = [],
+	install_requires=['dateutil', 'slumber', 'pyfits'],
+	keywords = ['sun', 'astronomy', 'SOLARNET', 'RESTfull'],
+	classifiers = ['Intended Audience :: Science/Research', 'Development Status :: 4 - Beta', 'License :: OSI Approved :: MIT License','Natural Language :: English', 'Operating System :: POSIX :: Linux', 'Programming Language :: Python :: 2',  'Topic :: Scientific/Engineering :: Astronomy'],
 )
