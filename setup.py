@@ -7,7 +7,7 @@ setup(
 	author = 'Benjamin Mampaey',
 	author_email = 'bmampaey@gmail.com',
 	url = 'https://github.com/bmampaey/SOLARNET-python-client',
-	download_url = 'https://github.com/SOLARNET-python-client/tarball/0.1',
-	keywords = ['sun', 'physics', 'SOLARNET', 'RESTfull],
+	download_url = 'https://github.com/bmampaey/SOLARNET-python-client/tarball/0.1',
+	keywords = ['sun', 'physics', 'SOLARNET', 'RESTfull'],
 	classifiers = [],
 )
