@@ -1,7 +1,7 @@
 import copy
 from api import API
 from Dataset import Dataset
-from filters import StringFilter
+from filters import StringFilter, NumericFilter, TimeFilter, RelatedFilter
 
 class Datasets:
 	
@@ -25,7 +25,7 @@ class Datasets:
 	def __init__(self, api = API):
 		self.api = api.v1("dataset")
 		# Get the list from a schema lookup
-		self.field_names = ["id", "name", "instrument", "telescope", "description", "contact", "characteristics"]
+		self.fields = self.api.schema.get()['fields']
 		self.filters = dict()
 	
 	def __iter__(self):
@@ -67,13 +67,21 @@ class Datasets:
 		args = dict(zip(args[::2], args[1::2]))
 		args.update(kwargs)
 		for keyword, value in args.iteritems():
-			if keyword in self.field_names:
-				try:
+			try:
+				if self.fields[keyword]["type"] == "string":
 					filters[keyword] = StringFilter(value)
-				except ValueError, why:
+				elif self.fields[keyword]["type"] == "int" or self.fields[keyword]["type"] == "float":
+					filters[keyword] = NumericFilter(value)
+				elif self.fields[keyword]["type"] == "datetime":
+					filters[keyword] = TimeFilter(value)
+				elif self.fields[keyword]["type"] == "related":
+					filters[keyword] = RelatedFilter(value)
+				else:
+					raise NotImplementedError("Filter for type %s has not been implemented" % self.fields[keyword]["type"])
+			except ValueError, why:
 					raise ValueError("Bad filter value %s for keyword %s: %s" % (keyword, value, why))
-			else:
-				raise KeyError("Unknown keyword %s for dataset %s" % (keyword, self.name))
+			except KeyError:
+				raise KeyError("Unknown datasets keyword %s" % keyword)
 		
 		dataset_copy = copy.deepcopy(self)
 		dataset_copy.filters.update(filters)

@@ -81,4 +81,10 @@ class TimeFilter(Filter):
 		
 		else:
 			raise ValueError("Time filter must either be a Time value, a Time compatible string, or a doublet (first date, last date)")
-			
+
+class RelatedFilter(Filter):
+	
+	def __init__(self, value):
+		self.value = value
+		self.filters = dict()
+		self.filters["%s__in"] = value

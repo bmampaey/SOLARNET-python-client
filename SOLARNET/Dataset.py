@@ -1,6 +1,6 @@
 import copy
 from api import API
-from filters import StringFilter, NumericFilter, TimeFilter
+from filters import StringFilter, NumericFilter, TimeFilter, RelatedFilter
 from Data import Data
 
 class Dataset:
@@ -49,10 +49,12 @@ class Dataset:
 		self.meta_data_api = api.v1(self.id + "_meta_data")
 		self.data_location_api = api.v1(self.id + "_data_location")
 		
+		# Get the fields by looking up the schema
+		self.fields = self.meta_data_api.schema.get()['fields']
+		
 		#Set up the keywords and the field names for easy reverse lookup
-		# TODO get the fields by looking up the schema
 		self.__keywords = dict()
-		self.field_names = dict()
+		self.field_names = dict(tags="tags")
 		
 		for keyword in self.keyword_api.get(limit=0)["objects"]:
 			self.field_names[keyword["name"]] = keyword["db_column"]
@@ -113,19 +115,21 @@ class Dataset:
 		args = dict(zip(args[::2], args[1::2]))
 		args.update(kwargs)
 		for keyword, value in args.iteritems():
-			if keyword in self.keywords:
-				try:
-					if self.keywords[keyword]["type"] == "str":
-						filters[keyword] = StringFilter(value)
-					elif self.keywords[keyword]["type"] == "int" or self.keywords[keyword]["type"] == "float":
-						filters[keyword] = NumericFilter(value)
-					elif self.keywords[keyword]["type"] == "datetime":
-						filters[keyword] = TimeFilter(value)
-					else:
-						raise NotImplementedError("Filter for type %s has not been implemented" % self.keywords[keyword]["type"])
-				except ValueError, why:
+			try:
+				field_name = self.field_names[keyword]
+				if self.fields[field_name]["type"] == "string":
+					filters[field_name] = StringFilter(value)
+				elif self.fields[field_name]["type"] == "int" or self.fields[field_name]["type"] == "float":
+					filters[field_name] = NumericFilter(value)
+				elif self.fields[field_name]["type"] == "datetime":
+					filters[field_name] = TimeFilter(value)
+				elif self.fields[field_name]["type"] == "related":
+					filters[field_name] = RelatedFilter(value)
+				else:
+					raise NotImplementedError("Filter for type %s has not been implemented" % self.fields[field_name]["type"])
+			except ValueError, why:
 					raise ValueError("Bad filter value %s for keyword %s: %s" % (keyword, value, why))
-			else:
+			except KeyError:
 				raise KeyError("Unknown keyword %s for dataset %s" % (keyword, self.name))
 		
 		dataset_copy = copy.deepcopy(self)
