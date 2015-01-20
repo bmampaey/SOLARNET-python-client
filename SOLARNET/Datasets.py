@@ -23,9 +23,9 @@ class Datasets:
 				raise StopIteration()
 	
 	def __init__(self, api = API):
-		self.api = api.api.v1("dataset")
-		# TODO get the list from a schema lookup
-		self.field_names = ["name", "display_name", "instrument", "telescope", "description", "contact", "characteristics"]
+		self.api = api.v1("dataset")
+		# Get the list from a schema lookup
+		self.field_names = ["id", "name", "instrument", "telescope", "description", "contact", "characteristics"]
 		self.filters = dict()
 	
 	def __iter__(self):
@@ -41,7 +41,7 @@ class Datasets:
 
 		if isinstance(key, basestring):
 			try:
-				return next(dataset for dataset in self.Iterator(self.api.get(limit = 0, **self.__get_filters())["objects"]) if dataset.name == key or dataset.display_name == key)
+				return next(dataset for dataset in self.Iterator(self.api.get(limit = 0, **self.__get_filters())["objects"]) if dataset.id == key or dataset.name == key)
 			except StopIteration:
 				raise IndexError("No such dataset")
 		
@@ -73,7 +73,7 @@ class Datasets:
 				except ValueError, why:
 					raise ValueError("Bad filter value %s for keyword %s: %s" % (keyword, value, why))
 			else:
-				raise KeyError("Unknown keyword %s for dataset %s" % (keyword, self.display_name))
+				raise KeyError("Unknown keyword %s for dataset %s" % (keyword, self.name))
 		
 		dataset_copy = copy.deepcopy(self)
 		dataset_copy.filters.update(filters)

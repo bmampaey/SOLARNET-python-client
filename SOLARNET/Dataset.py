@@ -40,14 +40,14 @@ class Dataset:
 				raise StopIteration()
 	
 	def __init__(self, info, api = API):
+		self.id = info["id"]
 		self.name = info["name"]
-		self.display_name = info["display_name"]
 		self.description = info["description"]
 		self.characteristics = info["characteristics"]
 		
-		self.keyword_api = api.api.v1(self.name + "_keyword")
-		self.meta_data_api = api.api.v1(self.name + "_meta_data")
-		self.data_location_api = api.api.v1(self.name + "_data_location")
+		self.keyword_api = api.v1(self.id + "_keyword")
+		self.meta_data_api = api.v1(self.id + "_meta_data")
+		self.data_location_api = api.v1(self.id + "_data_location")
 		
 		#Set up the keywords and the field names for easy reverse lookup
 		# TODO get the fields by looking up the schema
@@ -63,12 +63,12 @@ class Dataset:
 	
 	def __str__(self):
 		if self.filters:
-			return self.display_name + ": " + "; ".join([keyword+" = "+str(filter) for keyword,filter in self.filters.iteritems()])
+			return self.name + ": " + "; ".join([keyword+" = "+str(filter) for keyword,filter in self.filters.iteritems()])
 		else:
-			return self.display_name + ": all"
+			return self.name + ": all"
 	
 	def __repr__(self):
-		return self.name
+		return str(self)
 	
 	def __get_filters(self):
 		filters = dict()
@@ -85,7 +85,7 @@ class Dataset:
 			datas = list()
 			i = 0
 			for data in self.Iterator(self.meta_data_api, self.__get_filters(), {field_name: keyword for keyword, field_name in self.field_names.iteritems()}, offset = key.start, limit = key.stop):
-				if i % key.step == 0:
+				if not key.step or i % key.step == 0:
 					datas.append(data)
 				i += 1
 				if i + key.start >= key.stop:
@@ -126,7 +126,7 @@ class Dataset:
 				except ValueError, why:
 					raise ValueError("Bad filter value %s for keyword %s: %s" % (keyword, value, why))
 			else:
-				raise KeyError("Unknown keyword %s for dataset %s" % (keyword, self.display_name))
+				raise KeyError("Unknown keyword %s for dataset %s" % (keyword, self.name))
 		
 		dataset_copy = copy.deepcopy(self)
 		dataset_copy.filters.update(filters)
