@@ -119,7 +119,7 @@ class Dataset:
 				field_name = self.field_names[keyword]
 				if self.fields[field_name]["type"] == "string":
 					filters[field_name] = StringFilter(value)
-				elif self.fields[field_name]["type"] == "int" or self.fields[field_name]["type"] == "float":
+				elif self.fields[field_name]["type"] == "integer" or self.fields[field_name]["type"] == "float":
 					filters[field_name] = NumericFilter(value)
 				elif self.fields[field_name]["type"] == "datetime":
 					filters[field_name] = TimeFilter(value)
