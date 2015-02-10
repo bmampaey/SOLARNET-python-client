@@ -2,7 +2,7 @@ from distutils.core import setup
 setup(
 	name = 'SOLARNET',
 	packages = ['SOLARNET'],
-	version = '0.2.2',
+	version = '0.2.3',
 	description = 'A python client to access the RESTfull interface of the SOLARNET Data Archive',
 	author = 'Benjamin Mampaey',
 	author_email = 'bmampaey@gmail.com',

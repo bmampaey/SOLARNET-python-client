@@ -75,7 +75,9 @@ class Dataset:
 	def __get_filters(self):
 		filters = dict()
 		for keyword, filter in self.filters.iteritems():
-			filters.update(filter(self.field_names[keyword]))
+			field_name = self.field_names[keyword]
+			for key, value in filter.filters.iteritems():
+				filters[key % field_name] = value
 		return filters
 	
 	def __iter__(self):
@@ -117,20 +119,24 @@ class Dataset:
 		for keyword, value in args.iteritems():
 			try:
 				field_name = self.field_names[keyword]
-				if self.fields[field_name]["type"] == "string":
-					filters[field_name] = StringFilter(value)
-				elif self.fields[field_name]["type"] == "integer" or self.fields[field_name]["type"] == "float":
-					filters[field_name] = NumericFilter(value)
-				elif self.fields[field_name]["type"] == "datetime":
-					filters[field_name] = TimeFilter(value)
-				elif self.fields[field_name]["type"] == "related":
-					filters[field_name] = RelatedFilter(value)
-				else:
-					raise NotImplementedError("Filter for type %s has not been implemented" % self.fields[field_name]["type"])
-			except ValueError, why:
-					raise ValueError("Bad filter value %s for keyword %s: %s" % (keyword, value, why))
 			except KeyError:
 				raise KeyError("Unknown keyword %s for dataset %s" % (keyword, self.name))
+			else:
+				field_type = self.fields[field_name]["type"]
+			try:
+				if field_type == "string":
+					filters[keyword] = StringFilter(value)
+				elif field_type == "integer" or field_type == "float":
+					filters[keyword] = NumericFilter(value)
+				elif field_type == "datetime":
+					filters[keyword] = TimeFilter(value)
+				elif field_type == "related":
+					filters[keyword] = RelatedFilter(value)
+				else:
+					raise NotImplementedError("Filter for type %s has not been implemented" % field_type)
+			except ValueError, why:
+					raise ValueError("Bad filter value %s for keyword %s: %s" % (keyword, value, why))
+
 		
 		dataset_copy = copy.deepcopy(self)
 		dataset_copy.filters.update(filters)

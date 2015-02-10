@@ -13,8 +13,8 @@ for dataset in datasets:
 # Get a specific dataset
 aia_lev1 = datasets["aia_lev1"]
 
-# Filter the record in that dataset for February 2012 the 20th with a wavelength of 171A
-filtered_aia_lev1 = aia_lev1.filter("DATE-OBS", "2012 Feb 20", WAVELNTH = 171)
+# Filter the record in that dataset for June 2012 the 6th with a wavelength of 171A
+filtered_aia_lev1 = aia_lev1.filter("DATE-OBS", "2012 June 6", WAVELNTH = 171)
 
 # Display the date of observation and the wavelength in that filtered dataset
 for record in filtered_aia_lev1:
@@ -22,7 +22,7 @@ for record in filtered_aia_lev1:
 
 # Download the data from a record
 record = filtered_aia_lev1[0]
-redord.download("/tmp")
+record.download("/tmp")
 
 # Get the data as a StringIO [1] without saving to disk
 data = record.data()
