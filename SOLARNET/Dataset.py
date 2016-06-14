@@ -31,7 +31,7 @@ class Dataset:
 				# Parse the info into a Data
 				meta_data = {self.keywords[field_name]: value for field_name, value in info.iteritems() if field_name in self.keywords}
 				try:
-					data_location = info["data_location"]["url"]
+					data_location = info["data_location"]["file_url"]
 				except TypeError, KeyError:
 					data_location = None
 				tags = [tag["name"] for tag in info["tags"]]
@@ -44,10 +44,7 @@ class Dataset:
 		self.name = info["name"]
 		self.description = info["description"]
 		self.characteristics = info["characteristics"]
-		
-		self.keyword_api = api.v1(self.id + "_keyword")
-		self.meta_data_api = api.v1(self.id + "_meta_data")
-		self.data_location_api = api.v1(self.id + "_data_location")
+		self.meta_data_api = api.metadata(self.id)
 		
 		# Get the fields by looking up the schema
 		self.fields = self.meta_data_api.schema.get()['fields']
@@ -56,7 +53,7 @@ class Dataset:
 		self.__keywords = dict()
 		self.field_names = dict(tags="tags")
 		
-		for keyword in self.keyword_api.get(limit=0)["objects"]:
+		for keyword in api.keyword.get(limit=0, dataset=self.id)["objects"]:
 			self.field_names[keyword["name"]] = keyword["db_column"]
 			self.__keywords[keyword["name"]] = {"description": keyword["description"], "unit": keyword["unit"], "type": keyword["python_type"] }
 		

@@ -23,7 +23,7 @@ class Datasets:
 				raise StopIteration()
 	
 	def __init__(self, api = API):
-		self.api = api.v1("dataset")
+		self.api = api.dataset
 		# Get the list from a schema lookup
 		self.fields = self.api.schema.get()['fields']
 		self.filters = dict()
