@@ -1,5 +1,6 @@
 from datetime import datetime
 import dateutil.parser
+from past.builtins import basestring
 
 class Time:
 	def __init__(self, *args, **kwargs):
@@ -9,7 +10,7 @@ class Time:
 		if len(args) == 1 and isinstance(args[0], basestring):
 			time = Time.from_string(args[0])
 			for attr in attrs:
-				setattr(self, attr, getattr(time, attr)) 
+				setattr(self, attr, getattr(time, attr))
 		# Second case we get value for the fields indenpendently
 		else:
 			for attr, arg in zip(attrs, args):
@@ -20,7 +21,7 @@ class Time:
 				else:
 					raise TypeError("Wrong type of argument for attribute %s" % attr)
 			
-			for attr, arg in kwargs.iteritems():
+			for attr, arg in kwargs.items():
 				if hasattr(self, attr):
 					raise ValueError("Duplicate value for attribute %s" % attr)
 				elif arg is None:
@@ -64,7 +65,7 @@ class Time:
 				else:
 					setattr(time, attr, 1)
 			else:
-				setattr(time, attr, getattr(two, attr)) 
+				setattr(time, attr, getattr(two, attr))
 		
 		# Add microseconds to seconds
 		if time.microsecond is not None:

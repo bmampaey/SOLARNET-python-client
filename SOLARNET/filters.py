@@ -1,8 +1,8 @@
-import copy
 from datetime import date, datetime
 import dateutil.parser
+from past.builtins import basestring
 
-from time import Time
+from .time import Time
 
 class Filter:
 	
@@ -11,7 +11,7 @@ class Filter:
 		self.filters = {"%s__exact": value}
 
 	def __call__(self, field_name):
-		return {filter%field_name: value for filter, value in self.filters.iteritems()}
+		return {filter%field_name: value for filter, value in self.filters.items()}
 	
 	def __str__(self):
 		return str(self.value)

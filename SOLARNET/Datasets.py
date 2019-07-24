@@ -1,11 +1,13 @@
-import copy
-from api import API
-from Dataset import Dataset
-from filters import StringFilter, NumericFilter, TimeFilter, RelatedFilter
+from copy import deepcopy
+from builtins import object
+from past.builtins import basestring
+from .api import API
+from .Dataset import Dataset
+from .filters import StringFilter, NumericFilter, TimeFilter, RelatedFilter
 
 class Datasets:
 	
-	class Iterator:
+	class Iterator(object):
 	
 		def __init__(self, infos, offset = 0, limit = 0):
 		
@@ -15,7 +17,7 @@ class Datasets:
 			# Iterators are iterables too.
 			return self
 		
-		def next(self):
+		def __next__(self):
 			# Return the first one in cache
 			if self.infos:
 				return Dataset(self.infos.pop(0))
@@ -38,7 +40,6 @@ class Datasets:
 		return ", ".join([repr(dataset) for dataset in self])
 	
 	def __getitem__(self, key):
-
 		if isinstance(key, basestring):
 			try:
 				return next(dataset for dataset in self.Iterator(self.api.get(limit = 0, **self.__get_filters())["objects"]) if dataset.id == key or dataset.name == key)
@@ -58,7 +59,7 @@ class Datasets:
 	
 	def __get_filters(self):
 		filters = dict()
-		for field_name, filter in self.filters.iteritems():
+		for field_name, filter in self.filters.items():
 			filters.update(filter(field_name))
 		return filters
 		
@@ -66,7 +67,7 @@ class Datasets:
 		filters = dict()
 		args = dict(zip(args[::2], args[1::2]))
 		args.update(kwargs)
-		for keyword, value in args.iteritems():
+		for keyword, value in args.items():
 			try:
 				if self.fields[keyword]["type"] == "string":
 					filters[keyword] = StringFilter(value)
@@ -78,12 +79,11 @@ class Datasets:
 					filters[keyword] = RelatedFilter(value)
 				else:
 					raise NotImplementedError("Filter for type %s has not been implemented" % self.fields[keyword]["type"])
-			except ValueError, why:
+			except ValueError as why:
 					raise ValueError("Bad filter value %s for keyword %s: %s" % (keyword, value, why))
 			except KeyError:
 				raise KeyError("Unknown datasets keyword %s" % keyword)
 		
-		dataset_copy = copy.deepcopy(self)
+		dataset_copy = deepcopy(self)
 		dataset_copy.filters.update(filters)
 		return dataset_copy
-

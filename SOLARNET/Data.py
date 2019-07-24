@@ -1,6 +1,8 @@
 import os
-import urllib, urlparse
-import StringIO
+from future.standard_library import install_aliases
+install_aliases()
+from urllib.request import urlopen, urlretrieve
+from io import BytesIO
 
 class Data:
 	
@@ -10,20 +12,23 @@ class Data:
 		self.tags = tags
 	
 	def download(self, to="."):
-		if os.path.isdir(to):
-			to = os.path.join(to, os.path.basename(urlparse.urlparse(self.data_location).path))
-		elif not os.path.isdir(os.path.dirname(to)):
-			raise ValueError("No directory %s" % os.path.dirname(to))
+		if not os.path.isdir(to):
+			raise ValueError("No directory %s" % to)
 		
-		urllib.urlretrieve(self.data_location, to)
+		to = os.path.join(to, self.data_location["file_path"])
+		
+		if not os.path.isdir(os.path.dirname(to)):
+			os.makedirs(os.path.dirname(to))
+		
+		urlretrieve(self.data_location["file_url"], to)
 	
 	def data(self):
-		return StringIO.StringIO(urllib.urlopen(self.data_location).read())
+		return BytesIO(urlopen(self.data_location["file_url"]).read())
 	
 	def HDUs(self):
 		try:
-			import pyfits
+			from astropy.io import fits
 		except ImportError:
-			raise ImportError("Module pyfits is not installed")
+			raise ImportError("Module astropy is not installed")
 		else:
-			return pyfits.open(self.data())
+			return fits.open(self.data())

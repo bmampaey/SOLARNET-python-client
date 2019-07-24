@@ -1,11 +1,13 @@
-import copy
-from api import API
-from filters import StringFilter, NumericFilter, TimeFilter, RelatedFilter
-from Data import Data
+from copy import deepcopy
+from builtins import object
+from .api import API
+from .filters import StringFilter, NumericFilter, TimeFilter, RelatedFilter
+from .Data import Data
+
 
 class Dataset:
 	
-	class Iterator:
+	class Iterator(object):
 	
 		def __init__(self, api, filters, keywords, offset = 0, limit = 20):
 		
@@ -20,7 +22,7 @@ class Dataset:
 			# Iterators are iterables too.
 			return self
 		
-		def next(self):
+		def __next__(self):
 			# Cache some info
 			if not self.infos:
 				self.infos = self.api.get(limit=self.limit, offset=self.offset, **self.filters)["objects"]
@@ -29,10 +31,10 @@ class Dataset:
 			if self.infos:
 				info = self.infos.pop(0)
 				# Parse the info into a Data
-				meta_data = {self.keywords[field_name]: value for field_name, value in info.iteritems() if field_name in self.keywords}
+				meta_data = {self.keywords[field_name]: value for field_name, value in info.items() if field_name in self.keywords}
 				try:
-					data_location = info["data_location"]["file_url"]
-				except TypeError, KeyError:
+					data_location = info["data_location"]
+				except (TypeError, KeyError):
 					data_location = None
 				tags = [tag["name"] for tag in info["tags"]]
 				return Data(meta_data, data_location, tags)
@@ -62,7 +64,7 @@ class Dataset:
 	
 	def __str__(self):
 		if self.filters:
-			return self.name + ": " + "; ".join([keyword+" = "+str(filter) for keyword,filter in self.filters.iteritems()])
+			return self.name + ": " + "; ".join([keyword+" = "+str(filter) for keyword,filter in self.filters.items()])
 		else:
 			return self.name + ": all"
 	
@@ -71,21 +73,21 @@ class Dataset:
 	
 	def __get_filters(self):
 		filters = dict()
-		for keyword, filter in self.filters.iteritems():
+		for keyword, filter in self.filters.items():
 			field_name = self.field_names[keyword]
-			for key, value in filter.filters.iteritems():
+			for key, value in filter.filters.items():
 				filters[key % field_name] = value
 		return filters
 	
 	def __iter__(self):
-		return self.Iterator(self.meta_data_api, self.__get_filters(), {field_name: keyword for keyword, field_name in self.field_names.iteritems()})
+		return self.Iterator(self.meta_data_api, self.__get_filters(), {field_name: keyword for keyword, field_name in self.field_names.items()})
 	
 	def __getitem__(self, key):
 		if isinstance(key, slice):
 			# TODO if step is very large than cut down in smaller requests
 			datas = list()
 			i = 0
-			for data in self.Iterator(self.meta_data_api, self.__get_filters(), {field_name: keyword for keyword, field_name in self.field_names.iteritems()}, offset = key.start, limit = key.stop):
+			for data in self.Iterator(self.meta_data_api, self.__get_filters(), {field_name: keyword for keyword, field_name in self.field_names.items()}, offset = key.start, limit = key.stop):
 				if not key.step or i % key.step == 0:
 					datas.append(data)
 				i += 1
@@ -97,7 +99,7 @@ class Dataset:
 			if key < 0:
 				raise IndexError("Negative indexes are not supported.")
 			try:
-				return next(self.Iterator(self.meta_data_api, self.__get_filters(), {field_name: keyword for keyword, field_name in self.field_names.iteritems()}, offset = key, limit = 1))
+				return next(self.Iterator(self.meta_data_api, self.__get_filters(), {field_name: keyword for keyword, field_name in self.field_names.items()}, offset = key, limit = 1))
 			except StopIteration:
 				raise IndexError("The index (%d) is out of range" % key)
 		
@@ -113,7 +115,7 @@ class Dataset:
 		filters = dict()
 		args = dict(zip(args[::2], args[1::2]))
 		args.update(kwargs)
-		for keyword, value in args.iteritems():
+		for keyword, value in args.items():
 			try:
 				field_name = self.field_names[keyword]
 			except KeyError:
@@ -131,10 +133,10 @@ class Dataset:
 					filters[keyword] = RelatedFilter(value)
 				else:
 					raise NotImplementedError("Filter for type %s has not been implemented" % field_type)
-			except ValueError, why:
+			except ValueError as why:
 					raise ValueError("Bad filter value %s for keyword %s: %s" % (keyword, value, why))
 
 		
-		dataset_copy = copy.deepcopy(self)
+		dataset_copy = deepcopy(self)
 		dataset_copy.filters.update(filters)
 		return dataset_copy
