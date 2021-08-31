@@ -1,34 +1,32 @@
 import os
-from future.standard_library import install_aliases
-install_aliases()
 from urllib.request import urlopen, urlretrieve
 from io import BytesIO
 
 class Data:
 	
-	def __init__(self, meta_data, data_location, tags):
-		self.meta_data = meta_data
+	def __init__(self, metadata, data_location, tags):
+		self.metadata = metadata
 		self.data_location = data_location
 		self.tags = tags
 	
-	def download(self, to="."):
+	def download(self, to='.'):
 		if not os.path.isdir(to):
-			raise ValueError("No directory %s" % to)
+			raise ValueError('No directory %s' % to)
 		
-		to = os.path.join(to, self.data_location["file_path"])
+		to = os.path.join(to, self.data_location['file_path'])
 		
 		if not os.path.isdir(os.path.dirname(to)):
 			os.makedirs(os.path.dirname(to))
 		
-		urlretrieve(self.data_location["file_url"], to)
+		urlretrieve(self.data_location['file_url'], to)
 	
 	def data(self):
-		return BytesIO(urlopen(self.data_location["file_url"]).read())
+		return BytesIO(urlopen(self.data_location['file_url']).read())
 	
 	def HDUs(self):
 		try:
 			from astropy.io import fits
 		except ImportError:
-			raise ImportError("Module astropy is not installed")
+			raise ImportError('Module astropy is not installed')
 		else:
 			return fits.open(self.data())

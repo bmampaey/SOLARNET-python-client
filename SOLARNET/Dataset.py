@@ -1,13 +1,12 @@
 from copy import deepcopy
-from builtins import object
-from .api import API
+from .api import svo_api
 from .filters import StringFilter, NumericFilter, TimeFilter, RelatedFilter
 from .Data import Data
 
 
 class Dataset:
 	
-	class Iterator(object):
+	class Iterator:
 	
 		def __init__(self, api, filters, keywords, offset = 0, limit = 20):
 		
@@ -25,48 +24,47 @@ class Dataset:
 		def __next__(self):
 			# Cache some info
 			if not self.infos:
-				self.infos = self.api.get(limit=self.limit, offset=self.offset, **self.filters)["objects"]
+				self.infos = self.api.get(limit=self.limit, offset=self.offset, **self.filters)['objects']
 				self.offset += self.limit
 			# Return the first one in cache
 			if self.infos:
 				info = self.infos.pop(0)
 				# Parse the info into a Data
-				meta_data = {self.keywords[field_name]: value for field_name, value in info.items() if field_name in self.keywords}
+				metadata = {self.keywords[field_name]: value for field_name, value in info.items() if field_name in self.keywords}
 				try:
-					data_location = info["data_location"]
+					data_location = info['data_location']
 				except (TypeError, KeyError):
 					data_location = None
-				tags = [tag["name"] for tag in info["tags"]]
-				return Data(meta_data, data_location, tags)
+				tags = [tag['name'] for tag in info['tags']]
+				return Data(metadata, data_location, tags)
 			else:
 				raise StopIteration()
 	
-	def __init__(self, info, api = API):
-		self.id = info["id"]
-		self.name = info["name"]
-		self.description = info["description"]
-		self.characteristics = info["characteristics"]
-		self.meta_data_api = api.metadata(self.id)
+	def __init__(self, info, api = svo_api):
+		self.name = info['name']
+		self.description = info['description']
+		self.characteristics = info['characteristics']
+		self.metadata_api = api(info['metadata']['resource_uri'])
 		
 		# Get the fields by looking up the schema
-		self.fields = self.meta_data_api.schema.get()['fields']
+		self.fields = self.metadata_api.schema.get()['fields']
 		
 		#Set up the keywords and the field names for easy reverse lookup
 		self.__keywords = dict()
-		self.field_names = dict(tags="tags")
+		self.field_names = dict(tags='tags')
 		
-		for keyword in api.keyword.get(limit=0, dataset=self.id)["objects"]:
-			self.field_names[keyword["name"]] = keyword["db_column"]
-			self.__keywords[keyword["name"]] = {"description": keyword["description"], "unit": keyword["unit"], "type": keyword["python_type"] }
+		for keyword in api.keyword.get(limit=0, dataset__name=self.name)['objects']:
+			self.field_names[keyword['verbose_name']] = keyword['name']
+			self.__keywords[keyword['verbose_name']] = {'description': keyword['description'], 'unit': keyword['unit'], 'type': keyword['type'] }
 		
 		# At first the filter is empty
 		self.filters = dict()
 	
 	def __str__(self):
 		if self.filters:
-			return self.name + ": " + "; ".join([keyword+" = "+str(filter) for keyword,filter in self.filters.items()])
+			return self.name + ': ' + '; '.join([keyword+' = '+str(filter) for keyword,filter in self.filters.items()])
 		else:
-			return self.name + ": all"
+			return self.name + ': all'
 	
 	def __repr__(self):
 		return str(self)
@@ -80,14 +78,13 @@ class Dataset:
 		return filters
 	
 	def __iter__(self):
-		return self.Iterator(self.meta_data_api, self.__get_filters(), {field_name: keyword for keyword, field_name in self.field_names.items()})
+		return self.Iterator(self.metadata_api, self.__get_filters(), {field_name: keyword for keyword, field_name in self.field_names.items()})
 	
 	def __getitem__(self, key):
 		if isinstance(key, slice):
-			# TODO if step is very large than cut down in smaller requests
 			datas = list()
 			i = 0
-			for data in self.Iterator(self.meta_data_api, self.__get_filters(), {field_name: keyword for keyword, field_name in self.field_names.items()}, offset = key.start, limit = key.stop):
+			for data in self.Iterator(self.metadata_api, self.__get_filters(), {field_name: keyword for keyword, field_name in self.field_names.items()}, offset = key.start, limit = key.stop):
 				if not key.step or i % key.step == 0:
 					datas.append(data)
 				i += 1
@@ -97,14 +94,14 @@ class Dataset:
 		
 		elif isinstance(key, int):
 			if key < 0:
-				raise IndexError("Negative indexes are not supported.")
+				raise IndexError('Negative indexes are not supported.')
 			try:
-				return next(self.Iterator(self.meta_data_api, self.__get_filters(), {field_name: keyword for keyword, field_name in self.field_names.items()}, offset = key, limit = 1))
+				return next(self.Iterator(self.metadata_api, self.__get_filters(), {field_name: keyword for keyword, field_name in self.field_names.items()}, offset = key, limit = 1))
 			except StopIteration:
-				raise IndexError("The index (%d) is out of range" % key)
+				raise IndexError('The index (%d) is out of range' % key)
 		
 		else:
-			raise TypeError("Invalid argument type.")
+			raise TypeError('Invalid argument type.')
 	
 	@property
 	def keywords(self):
@@ -115,27 +112,27 @@ class Dataset:
 		filters = dict()
 		args = dict(zip(args[::2], args[1::2]))
 		args.update(kwargs)
+		
 		for keyword, value in args.items():
 			try:
 				field_name = self.field_names[keyword]
 			except KeyError:
-				raise KeyError("Unknown keyword %s for dataset %s" % (keyword, self.name))
+				raise KeyError('Unknown keyword %s for dataset %s' % (keyword, self.name))
 			else:
-				field_type = self.fields[field_name]["type"]
+				field_type = self.fields[field_name]['type']
 			try:
-				if field_type == "string":
+				if field_type == 'string':
 					filters[keyword] = StringFilter(value)
-				elif field_type == "integer" or field_type == "float":
+				elif field_type == 'integer' or field_type == 'float':
 					filters[keyword] = NumericFilter(value)
-				elif field_type == "datetime":
+				elif field_type == 'datetime':
 					filters[keyword] = TimeFilter(value)
-				elif field_type == "related":
+				elif field_type == 'related':
 					filters[keyword] = RelatedFilter(value)
 				else:
-					raise NotImplementedError("Filter for type %s has not been implemented" % field_type)
+					raise NotImplementedError('Filter for type %s has not been implemented' % field_type)
 			except ValueError as why:
-					raise ValueError("Bad filter value %s for keyword %s: %s" % (keyword, value, why))
-
+					raise ValueError('Bad filter value %s for keyword %s: %s' % (keyword, value, why))
 		
 		dataset_copy = deepcopy(self)
 		dataset_copy.filters.update(filters)

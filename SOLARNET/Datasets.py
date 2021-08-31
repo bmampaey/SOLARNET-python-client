@@ -1,13 +1,11 @@
 from copy import deepcopy
-from builtins import object
-from past.builtins import basestring
-from .api import API
+from .api import svo_api
 from .Dataset import Dataset
 from .filters import StringFilter, NumericFilter, TimeFilter, RelatedFilter
 
 class Datasets:
 	
-	class Iterator(object):
+	class Iterator:
 	
 		def __init__(self, infos, offset = 0, limit = 0):
 		
@@ -24,38 +22,38 @@ class Datasets:
 			else:
 				raise StopIteration()
 	
-	def __init__(self, api = API):
+	def __init__(self, api = svo_api):
 		self.api = api.dataset
 		# Get the list from a schema lookup
 		self.fields = self.api.schema.get()['fields']
 		self.filters = dict()
 	
 	def __iter__(self):
-		return self.Iterator(self.api.get(limit = 0, **self.__get_filters())["objects"])
+		return self.Iterator(self.api.get(limit = 0, **self.__get_filters())['objects'])
 	
 	def __str__(self):
-		return ", ".join([str(dataset) for dataset in self])
+		return ', '.join([str(dataset) for dataset in self])
 	
 	def __repr__(self):
-		return ", ".join([repr(dataset) for dataset in self])
+		return ', '.join([repr(dataset) for dataset in self])
 	
 	def __getitem__(self, key):
-		if isinstance(key, basestring):
+		if isinstance(key, str):
 			try:
-				return next(dataset for dataset in self.Iterator(self.api.get(limit = 0, **self.__get_filters())["objects"]) if dataset.id == key or dataset.name == key)
+				return next(dataset for dataset in self.Iterator(self.api.get(limit = 0, **self.__get_filters())['objects']) if dataset.name == key)
 			except StopIteration:
-				raise IndexError("No such dataset")
+				raise IndexError('No such dataset')
 		
 		elif isinstance(key, int):
 			if key < 0:
-				raise IndexError("Negative indexes are not supported.")
+				raise IndexError('Negative indexes are not supported.')
 			try:
-				return next(self.Iterator(self.api.get(offset = key, limit = 1, **self.__get_filters())["objects"]))
+				return next(self.Iterator(self.api.get(offset = key, limit = 1, **self.__get_filters())['objects']))
 			except StopIteration:
-				raise IndexError("The index (%d) is out of range" % key)
+				raise IndexError('The index (%d) is out of range' % key)
 		
 		else:
-			raise TypeError("Invalid argument type.")
+			raise TypeError('Invalid argument type.')
 	
 	def __get_filters(self):
 		filters = dict()
@@ -69,21 +67,23 @@ class Datasets:
 		args.update(kwargs)
 		for keyword, value in args.items():
 			try:
-				if self.fields[keyword]["type"] == "string":
+				if self.fields[keyword]['type'] == 'string':
 					filters[keyword] = StringFilter(value)
-				elif self.fields[keyword]["type"] == "int" or self.fields[keyword]["type"] == "float":
+				elif self.fields[keyword]['type'] == 'integer' or self.fields[keyword]['type'] == 'float':
 					filters[keyword] = NumericFilter(value)
-				elif self.fields[keyword]["type"] == "datetime":
+				elif self.fields[keyword]['type'] == 'datetime':
 					filters[keyword] = TimeFilter(value)
-				elif self.fields[keyword]["type"] == "related":
+				elif self.fields[keyword]['type'] == 'related':
 					filters[keyword] = RelatedFilter(value)
 				else:
-					raise NotImplementedError("Filter for type %s has not been implemented" % self.fields[keyword]["type"])
+					raise NotImplementedError('Filter for type %s has not been implemented' % self.fields[keyword]['type'])
 			except ValueError as why:
-					raise ValueError("Bad filter value %s for keyword %s: %s" % (keyword, value, why))
+					raise ValueError('Bad filter value %s for keyword %s: %s' % (keyword, value, why))
 			except KeyError:
-				raise KeyError("Unknown datasets keyword %s" % keyword)
+				raise KeyError('Unknown datasets keyword %s' % keyword)
 		
 		dataset_copy = deepcopy(self)
 		dataset_copy.filters.update(filters)
 		return dataset_copy
+
+datasets = Datasets()

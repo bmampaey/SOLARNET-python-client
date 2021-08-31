@@ -1,8 +1,7 @@
-from .api import API
+from .api import svo_api
 from .time import Time
-from .Datasets import Datasets
+from .Datasets import datasets
 
 
-datasets = Datasets(API)
-__all__ = ["Time", "API", "datasets"]
-__version__ = '2.1'
+__all__ = ['Time', 'svo_api', 'datasets']
+__version__ = '2.2'
